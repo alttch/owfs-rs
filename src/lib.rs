@@ -58,8 +58,11 @@ pub unsafe fn init(path: &str) -> Result<(), Error> {
     }
 }
 
+/// # Safety
+///
+/// Consider with libowcapi safety
 pub unsafe fn get(path: &str) -> Result<String, Error> {
-    let c_path = CString::new(path).unwrap();
+    let c_path = CString::new(path)?;
     let mut buf: *mut c_char = ptr::null_mut();
     let buf_ptr: *const *mut c_char = &mut buf;
     let mut buf_length: usize = 0;
@@ -72,9 +75,12 @@ pub unsafe fn get(path: &str) -> Result<String, Error> {
     }
 }
 
+/// # Safety
+///
+/// Consider with libowcapi safety
 pub unsafe fn set(path: &str, value: &str) -> Result<(), Error> {
-    let c_path = CString::new(path).unwrap();
-    let c_val = CString::new(value).unwrap();
+    let c_path = CString::new(path)?;
+    let c_val = CString::new(value)?;
     let len_i: isize = c_val.as_bytes_with_nul().len().try_into()?;
     #[allow(clippy::cast_sign_loss)]
     let res = owcapi::OW_put(c_path.as_ptr(), c_val.as_ptr(), len_i as usize);
