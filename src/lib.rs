@@ -4,7 +4,7 @@ use std::fmt;
 use std::os::raw::c_char;
 use std::ptr;
 
-mod devices;
+pub mod devices;
 mod owcapi;
 
 use devices::Device;
