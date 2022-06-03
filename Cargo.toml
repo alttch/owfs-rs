@@ -1,0 +1,16 @@
+[package]
+name = "owfs"
+version = "0.0.1"
+edition = "2021"
+authors = ["Sergei S. <div@altertech.com>"]
+license = "MIT"
+description = "Rust SDK for OWFS (1-Wire file system)"
+repository = "https://github.com/alttch/owfs-rs"
+readme = "README.md"
+keywords = ["owfs", "one-wire", "1-wire", "w1"]
+
+[lib]
+name = "owfs"
+path = "src/lib.rs"
+
+[dependencies]
