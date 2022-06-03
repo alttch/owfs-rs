@@ -58,7 +58,7 @@ pub unsafe fn init(path: &str) -> Result<(), Error> {
     }
 }
 
-unsafe fn get(path: &str) -> Result<String, Error> {
+pub unsafe fn get(path: &str) -> Result<String, Error> {
     let c_path = CString::new(path).unwrap();
     let mut buf: *mut c_char = ptr::null_mut();
     let buf_ptr: *const *mut c_char = &mut buf;
@@ -72,7 +72,7 @@ unsafe fn get(path: &str) -> Result<String, Error> {
     }
 }
 
-unsafe fn set(path: &str, value: &str) -> Result<(), Error> {
+pub unsafe fn set(path: &str, value: &str) -> Result<(), Error> {
     let c_path = CString::new(path).unwrap();
     let c_val = CString::new(value).unwrap();
     let len_i: isize = c_val.as_bytes_with_nul().len().try_into()?;
