@@ -4,10 +4,10 @@ use std::fmt;
 use std::os::raw::c_char;
 use std::ptr;
 
-pub mod devices;
+mod devices;
 mod owcapi;
 
-use devices::Device;
+pub use devices::{Device, DeviceInfo};
 
 #[derive(Debug)]
 pub struct Error {
