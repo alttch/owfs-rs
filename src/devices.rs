@@ -70,27 +70,21 @@ impl Device {
     pub unsafe fn info(&self) -> Result<DeviceInfo, Error> {
         Ok(DeviceInfo {
             w1_type: self.get("type")?,
-            path: &self.path,
             family: self.get("family")?.parse().ok(),
         })
     }
 }
 
 #[derive(Debug, Clone)]
-pub struct DeviceInfo<'a> {
+pub struct DeviceInfo {
     w1_type: String,
-    path: &'a str,
     family: Option<u32>,
 }
 
-impl<'a> DeviceInfo<'a> {
+impl DeviceInfo {
     #[inline]
     pub fn w1_type(&self) -> &str {
         &self.w1_type
-    }
-    #[inline]
-    pub fn path(&self) -> &str {
-        self.path
     }
     #[inline]
     pub fn family(&self) -> Option<u32> {
