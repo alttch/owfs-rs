@@ -14,3 +14,4 @@ name = "owfs"
 path = "src/lib.rs"
 
 [dependencies]
+libc = "0.2.126"

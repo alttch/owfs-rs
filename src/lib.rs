@@ -1,5 +1,5 @@
 use std::collections::HashSet;
-use std::ffi::CString;
+use std::ffi::{CStr, CString};
 use std::fmt;
 use std::os::raw::c_char;
 use std::ptr;
@@ -68,9 +68,12 @@ pub unsafe fn get(path: &str) -> Result<String, Error> {
     let mut buf_length: usize = 0;
     let res = owcapi::OW_get(c_path.as_ptr(), buf_ptr, &mut buf_length);
     if res >= 0 {
-        let data = CString::from_raw(buf);
-        Ok(data.to_string_lossy().to_string())
+        let data = CStr::from_ptr(buf);
+        let result = data.to_string_lossy().to_string();
+        libc::free(buf.cast::<libc::c_void>());
+        Ok(result)
     } else {
+        libc::free(buf.cast::<libc::c_void>());
         Err(Error::new(res))
     }
 }
