@@ -24,7 +24,10 @@ Requires linking with owcapi lib, build.rs example:
 fn main() {
     let os = env::var("CARGO_CFG_TARGET_OS").unwrap();
     match os.as_str() {
-        "linux" => println!("cargo:rustc-link-lib=owcapi"),
+        "linux" => {
+            println!("cargo:rustc-link-lib=ow");
+            println!("cargo:rustc-link-lib=owcapi");
+        }
         _ => unimplemented!(),
     };
     println!("cargo:rustc-link-search=/usr/lib/x86_64-linux-gnu");
