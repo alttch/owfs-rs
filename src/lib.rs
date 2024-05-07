@@ -81,12 +81,50 @@ pub unsafe fn get(path: &str) -> Result<String, Error> {
 /// # Safety
 ///
 /// Consider with libowcapi safety
+pub unsafe fn get_bytes(path: &str) -> Result<Vec<u8>, Error> {
+    let c_path = CString::new(path)?;
+    let mut buf: *mut c_char = ptr::null_mut();
+    let buf_ptr: *const *mut c_char = &mut buf;
+    let mut buf_length: usize = 0;
+    let res = owcapi::OW_get(c_path.as_ptr(), buf_ptr, &mut buf_length);
+    if res >= 0 {
+        let result = std::slice::from_raw_parts(buf.cast::<u8>(), buf_length).to_vec();
+        libc::free(buf.cast::<libc::c_void>());
+        Ok(result)
+    } else {
+        libc::free(buf.cast::<libc::c_void>());
+        Err(Error::new(res))
+    }
+}
+
+/// # Safety
+///
+/// Consider with libowcapi safety
 pub unsafe fn set(path: &str, value: &str) -> Result<(), Error> {
     let c_path = CString::new(path)?;
     let c_val = CString::new(value)?;
     let len_i: isize = c_val.as_bytes_with_nul().len().try_into()?;
     #[allow(clippy::cast_sign_loss)]
     let res = owcapi::OW_put(c_path.as_ptr(), c_val.as_ptr(), len_i as usize);
+    if res == len_i {
+        Ok(())
+    } else {
+        Err(Error::new(-2))
+    }
+}
+
+/// # Safety
+///
+/// Consider with libowcapi safety
+pub unsafe fn set_bytes(path: &str, value: &[u8]) -> Result<(), Error> {
+    let c_path = CString::new(path)?;
+    let len_i: isize = value.len().try_into()?;
+    #[allow(clippy::cast_sign_loss)]
+    let res = owcapi::OW_put(
+        c_path.as_ptr(),
+        value.as_ptr().cast::<c_char>(),
+        len_i as usize,
+    );
     if res == len_i {
         Ok(())
     } else {
@@ -169,7 +207,7 @@ pub unsafe fn scan(options: ScanOptions) -> Result<Vec<Device>, Error> {
     let mut result = Vec::new();
     for el in data.split(',') {
         if let Some(ch) = el.chars().next() {
-            if ('0'..='9').contains(&ch) || ('A'..='F').contains(&ch) {
+            if ch.is_ascii_digit() || ('A'..='F').contains(&ch) {
                 if let Some(el_path) = el.strip_suffix('/') {
                     let mut dev = Device::new(el_path);
                     if dev.load().is_ok() && options.matches(&dev) {
