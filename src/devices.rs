@@ -23,7 +23,7 @@ impl Device {
     /// # Safety
     ///
     /// Consider with libowcapi safety
-    pub unsafe fn load(&mut self) -> Result<(), Error> {
+    pub fn load(&mut self) -> Result<(), Error> {
         let data = crate::get(&self.path)?;
         let a: HashSet<String> = data
             .split(',')
@@ -53,21 +53,21 @@ impl Device {
     /// # Safety
     ///
     /// Consider with libowcapi safety
-    pub unsafe fn get(&self, attr: &str) -> Result<String, Error> {
+    pub fn get(&self, attr: &str) -> Result<String, Error> {
         crate::get(&format!("{}/{}", self.path, attr))
     }
     #[inline]
     /// # Safety
     ///
     /// Consider with libowcapi safety
-    pub unsafe fn set(&self, attr: &str, value: &str) -> Result<(), Error> {
+    pub fn set(&self, attr: &str, value: &str) -> Result<(), Error> {
         crate::set(&format!("{}/{}", self.path, attr), value)
     }
     #[inline]
     /// # Safety
     ///
     /// Consider with libowcapi safety
-    pub unsafe fn info(&self) -> Result<DeviceInfo, Error> {
+    pub fn info(&self) -> Result<DeviceInfo, Error> {
         Ok(DeviceInfo {
             w1_type: self.get("type")?,
             family: self.get("family")?.parse().ok(),

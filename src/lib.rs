@@ -1,3 +1,4 @@
+#![ doc = include_str!( concat!( env!( "CARGO_MANIFEST_DIR" ), "/", "README.md" ) ) ]
 use std::collections::HashSet;
 use std::ffi::{CStr, CString};
 use std::fmt;
@@ -45,67 +46,72 @@ impl fmt::Display for Error {
 
 impl std::error::Error for Error {}
 
-/// # Safety
-///
-/// Consider with libowcapi safety
-pub unsafe fn init(path: &str) -> Result<(), Error> {
+pub struct OwfsGuard {}
+
+impl Drop for OwfsGuard {
+    #[inline]
+    fn drop(&mut self) {
+        finish();
+    }
+}
+
+pub fn init(path: &str) -> Result<OwfsGuard, Error> {
     let c_path = CString::new(path)?;
-    let res = owcapi::OW_init(c_path.as_ptr());
+    let res = unsafe { owcapi::OW_init(c_path.as_ptr()) };
     if res == 0 {
-        Ok(())
+        Ok(OwfsGuard {})
     } else {
         Err(Error::new(res))
     }
 }
 
-/// # Safety
-///
-/// Consider with libowcapi safety
-pub unsafe fn get(path: &str) -> Result<String, Error> {
+pub fn get(path: &str) -> Result<String, Error> {
     let c_path = CString::new(path)?;
     let mut buf: *mut c_char = ptr::null_mut();
     let buf_ptr: *const *mut c_char = &mut buf;
     let mut buf_length: usize = 0;
-    let res = owcapi::OW_get(c_path.as_ptr(), buf_ptr, &mut buf_length);
+    let res = unsafe { owcapi::OW_get(c_path.as_ptr(), buf_ptr, &mut buf_length) };
     if res >= 0 {
-        let data = CStr::from_ptr(buf);
+        let data = unsafe { CStr::from_ptr(buf) };
         let result = data.to_string_lossy().to_string();
-        libc::free(buf.cast::<libc::c_void>());
+        unsafe {
+            libc::free(buf.cast::<libc::c_void>());
+        }
         Ok(result)
     } else {
-        libc::free(buf.cast::<libc::c_void>());
+        unsafe {
+            libc::free(buf.cast::<libc::c_void>());
+        }
         Err(Error::new(res))
     }
 }
 
-/// # Safety
-///
-/// Consider with libowcapi safety
-pub unsafe fn get_bytes(path: &str) -> Result<Vec<u8>, Error> {
+pub fn get_bytes(path: &str) -> Result<Vec<u8>, Error> {
     let c_path = CString::new(path)?;
     let mut buf: *mut c_char = ptr::null_mut();
     let buf_ptr: *const *mut c_char = &mut buf;
     let mut buf_length: usize = 0;
-    let res = owcapi::OW_get(c_path.as_ptr(), buf_ptr, &mut buf_length);
+    let res = unsafe { owcapi::OW_get(c_path.as_ptr(), buf_ptr, &mut buf_length) };
     if res >= 0 {
-        let result = std::slice::from_raw_parts(buf.cast::<u8>(), buf_length).to_vec();
-        libc::free(buf.cast::<libc::c_void>());
+        let result = unsafe { std::slice::from_raw_parts(buf.cast::<u8>(), buf_length).to_vec() };
+        unsafe {
+            libc::free(buf.cast::<libc::c_void>());
+        }
         Ok(result)
     } else {
-        libc::free(buf.cast::<libc::c_void>());
+        unsafe {
+            libc::free(buf.cast::<libc::c_void>());
+        }
         Err(Error::new(res))
     }
 }
 
-/// # Safety
-///
-/// Consider with libowcapi safety
-pub unsafe fn set(path: &str, value: &str) -> Result<(), Error> {
+pub fn set(path: &str, value: &str) -> Result<(), Error> {
     let c_path = CString::new(path)?;
     let c_val = CString::new(value)?;
     let len_i: isize = c_val.as_bytes_with_nul().len().try_into()?;
     #[allow(clippy::cast_sign_loss)]
-    let res = owcapi::OW_put(c_path.as_ptr(), c_val.as_ptr(), len_i as usize);
+    let res = unsafe { owcapi::OW_put(c_path.as_ptr(), c_val.as_ptr(), len_i as usize) };
     if res == len_i {
         Ok(())
     } else {
@@ -113,18 +119,17 @@ pub unsafe fn set(path: &str, value: &str) -> Result<(), Error> {
     }
 }
 
-/// # Safety
-///
-/// Consider with libowcapi safety
-pub unsafe fn set_bytes(path: &str, value: &[u8]) -> Result<(), Error> {
+pub fn set_bytes(path: &str, value: &[u8]) -> Result<(), Error> {
     let c_path = CString::new(path)?;
     let len_i: isize = value.len().try_into()?;
     #[allow(clippy::cast_sign_loss)]
-    let res = owcapi::OW_put(
-        c_path.as_ptr(),
-        value.as_ptr().cast::<c_char>(),
-        len_i as usize,
-    );
+    let res = unsafe {
+        owcapi::OW_put(
+            c_path.as_ptr(),
+            value.as_ptr().cast::<c_char>(),
+            len_i as usize,
+        )
+    };
     if res == len_i {
         Ok(())
     } else {
@@ -159,7 +164,7 @@ impl<'a> ScanOptions<'a> {
         self.attrs_any = Some(attrs_any.iter().copied().collect());
         self
     }
-    unsafe fn matches(&self, dev: &Device) -> bool {
+    fn matches(&self, dev: &Device) -> bool {
         if let Some(ref types) = self.types {
             if let Ok(tp) = dev.get("type") {
                 if !types.contains(&tp.as_str()) {
@@ -199,10 +204,7 @@ impl<'a> ScanOptions<'a> {
     }
 }
 
-/// # Safety
-///
-/// Consider with libowcapi safety
-pub unsafe fn scan(options: ScanOptions) -> Result<Vec<Device>, Error> {
+pub fn scan(options: ScanOptions) -> Result<Vec<Device>, Error> {
     let data = get("/uncached/")?;
     let mut result = Vec::new();
     for el in data.split(',') {
@@ -221,9 +223,6 @@ pub unsafe fn scan(options: ScanOptions) -> Result<Vec<Device>, Error> {
 }
 
 #[inline]
-/// # Safety
-///
-/// Consider with libowcapi safety
-pub unsafe fn finish() {
-    owcapi::OW_finish();
+fn finish() {
+    unsafe { owcapi::OW_finish() };
 }

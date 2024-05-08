@@ -115,5 +115,5 @@ fn lib() {
 }
 
 fn main() {
-    lib()
+    lib();
 }
